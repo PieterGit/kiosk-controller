@@ -1,0 +1,42 @@
+security:
+  allow_insecure: true
+
+chromium:
+  bin: chromium-browser
+  user_data_dir: /var/lib/kiosk-control/chrome-profile
+  extra_flags:
+    - --kiosk
+    - --remote-debugging-port=0
+    - about:blank
+
+views:
+  home: http://localhost
+
+playlist:
+  - view: home
+    seconds: 30
+
+policy:
+  idle_off_seconds: 120
+  manual_timeout_seconds: 600
+  hypo_threshold_mmol: 5.0
+  trending_guard_mmol: 0.5
+  falling_directions: [DoubleDown, SingleDown, FortyFiveDown]
+
+screen:
+  backlight_sysfs: /sys/class/backlight/rpi_backlight
+  brightness_on: 200
+  brightness_dim: 40
+
+system:
+  poweroff_command: ["systemctl", "poweroff", "--no-wall"]
+
+plugins:
+  input_activity:
+    enabled: false
+
+  homeassistant:
+    enabled: false
+
+  nightscout:
+    enabled: false

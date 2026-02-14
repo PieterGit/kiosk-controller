@@ -1,0 +1,67 @@
+# Example configuration for kiosk-control 0.0.2
+
+security:
+  allow_insecure: false
+
+chromium:
+  bin: chromium-browser
+  user_data_dir: /var/lib/kiosk-control/chrome-profile
+  extra_flags:
+    - --kiosk
+    - --noerrdialogs
+    - --disable-infobars
+    - --no-first-run
+    - --check-for-update-interval=31536000
+    - --remote-debugging-port=0
+    - about:blank
+
+views:
+  homeassistant: https://homeassistant.example.net/dashboard-wall
+  energy: https://homeassistant.example.net/energy
+  nightscout: https://nightscout.example.net
+
+playlist:
+  - view: homeassistant
+    seconds: 30
+  - view: energy
+    seconds: 20
+
+policy:
+  idle_off_seconds: 120
+  manual_timeout_seconds: 600
+  # mmol/L threshold
+  hypo_threshold_mmol: 5.0
+  trending_guard_mmol: 0.5
+  falling_directions: [DoubleDown, SingleDown, FortyFiveDown]
+
+screen:
+  backlight_sysfs: /sys/class/backlight/rpi_backlight
+  brightness_on: 200
+  brightness_dim: 40
+
+system:
+  # If you use sudoers NOPASSWD, set:
+  # poweroff_command: ["sudo", "-n", "systemctl", "poweroff"]
+  poweroff_command: ["systemctl", "poweroff", "--no-wall"]
+
+plugins:
+  input_activity:
+    enabled: true
+    device_hint: "FT5406"
+
+  homeassistant:
+    enabled: true
+    ws_url: wss://homeassistant.example.net/api/websocket
+    token: "REPLACE_ME"
+    entity_sun: sun.sun
+    entity_production_w: sensor.solar_production_w
+    entity_consumption_w: sensor.house_consumption_w
+    min_surplus_w: 0
+    require_sun_above_horizon: true
+
+  nightscout:
+    enabled: true
+    base_url: https://nightscout.example.net
+    access_token: "REPLACE_ME"
+    collections: [entries]
+    stale_seconds: 900
