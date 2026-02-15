@@ -1,4 +1,4 @@
-# kiosk-control 0.0.2
+# kiosk-control 0.0.3
 
 Policy-driven kiosk for Raspberry Pi OS:
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kiosk-control"
-version = "0.0.2"
+version = "0.0.3"
 description = "Policy-driven Raspberry Pi kiosk controller (Chromium CDP + plugins + D-Bus) with optional touch overlay UI."
 readme = "README.md"
 requires-python = ">=3.11"

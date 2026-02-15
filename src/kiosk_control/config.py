@@ -5,6 +5,8 @@ from typing import Any
 
 import yaml
 
+from .paths import default_user_data_dir
+
 
 class ConfigError(ValueError):
     pass
@@ -29,8 +31,40 @@ def load(path: str | Path) -> dict[str, Any]:
     data = yaml.safe_load(p.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         raise ConfigError("Top-level config must be a mapping")
+    normalize(data)
     validate(data)
     return data
+
+
+def normalize(cfg: dict[str, Any]) -> None:
+    """Normalize config values in-place.
+
+    This prevents common setup failures caused by:
+    - virtualenv / user-level execution with system-level paths (/var/lib/..)
+    - accidental leading/trailing whitespace in YAML
+    """
+
+    chromium = cfg.get("chromium")
+    if isinstance(chromium, dict):
+        udd = chromium.get("user_data_dir")
+        if udd is None:
+            chromium["user_data_dir"] = str(default_user_data_dir())
+        elif isinstance(udd, str):
+            chromium["user_data_dir"] = str(Path(udd.strip()).expanduser())
+
+    views = cfg.get("views")
+    if isinstance(views, dict):
+        for k, v in list(views.items()):
+            if isinstance(v, str):
+                views[k] = v.strip()
+
+    plugins = cfg.get("plugins")
+    if isinstance(plugins, dict):
+        for _pname, pcfg in plugins.items():
+            if isinstance(pcfg, dict):
+                for k, v in list(pcfg.items()):
+                    if isinstance(v, str):
+                        pcfg[k] = v.strip()
 
 
 def validate(cfg: dict[str, Any]) -> None:

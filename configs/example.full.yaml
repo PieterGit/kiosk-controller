@@ -1,11 +1,12 @@
-# Example configuration for kiosk-control 0.0.2
+# Example configuration for kiosk-control 0.0.3
 
 security:
   allow_insecure: false
 
 chromium:
   bin: chromium-browser
-  user_data_dir: /var/lib/kiosk-control/chrome-profile
+  # Use a user-writable path by default (system paths like /var/lib/... require root).
+  user_data_dir: ~/.local/state/kiosk-control/chrome-profile
   extra_flags:
     - --kiosk
     - --noerrdialogs

@@ -67,6 +67,13 @@ cp configs/example.full.yaml config.yaml
 
 Set URLs to HTTPS and supply tokens.
 
+Ensure `chromium.user_data_dir` is writable by the user running the service.
+For user services (recommended), use a home-directory path like:
+
+- `~/.local/state/kiosk-control/chrome-profile`
+
+Using `/var/lib/...` will fail unless you create the directory and `chown` it, or run as root.
+
 ## 6) Autostart with labwc
 
 Create `~/.config/labwc/autostart`:

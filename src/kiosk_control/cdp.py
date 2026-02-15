@@ -2,12 +2,16 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
+import os
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import websockets
+
+from .paths import default_user_data_dir
 
 
 class CdpError(RuntimeError):
@@ -86,14 +90,14 @@ class ChromiumKiosk:
 
     def __init__(self, bin_path: str, user_data_dir: str, extra_flags: list[str]):
         self._bin_path = bin_path
-        self._user_data_dir = user_data_dir
+        self._user_data_dir = user_data_dir.strip()
         self._extra_flags = extra_flags
         self._proc: subprocess.Popen | None = None
         self._cdp: CdpClient | None = None
         self._session_id: str | None = None
 
     async def start(self) -> None:
-        Path(self._user_data_dir).mkdir(parents=True, exist_ok=True)
+        self._ensure_profile_dir()
         cmd = [self._bin_path, f"--user-data-dir={self._user_data_dir}"] + list(self._extra_flags)
         self._proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
@@ -121,6 +125,43 @@ class ChromiumKiosk:
         )
         self._session_id = attached["sessionId"]
         await self._cdp.call("Page.enable", session_id=self._session_id)
+
+    def _ensure_profile_dir(self) -> None:
+        """Create Chromium profile directory, with safe fallback for user runs.
+
+        If the configured profile path is not writable (common when config uses
+        /var/lib/..), fall back to a user-writable XDG path.
+        """
+
+        log = logging.getLogger(__name__)
+
+        p = Path(self._user_data_dir).expanduser()
+        if _needs_user_fallback(p):
+            fallback = default_user_data_dir()
+            log.warning(
+                "chromium.user_data_dir is not writable (%s). Falling back to %s",
+                p,
+                fallback,
+            )
+            self._user_data_dir = str(fallback)
+            p = fallback
+        p.mkdir(parents=True, exist_ok=True)
+
+
+def _needs_user_fallback(profile_dir: Path) -> bool:
+    # Root can create /var/lib locations; user services typically cannot.
+    if hasattr(os, "geteuid") and os.geteuid() == 0:
+        return False
+
+    # Find nearest existing parent and test writability.
+    parent = profile_dir
+    while not parent.exists() and parent != parent.parent:
+        parent = parent.parent
+
+    try:
+        return not os.access(parent, os.W_OK)
+    except Exception:
+        return True
 
     async def navigate(self, url: str) -> None:
         if not self._cdp or not self._session_id:
